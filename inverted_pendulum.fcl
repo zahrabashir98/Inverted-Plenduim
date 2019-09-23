@@ -1,0 +1,142 @@
+FUNCTION_BLOCK Inverted_Pendulum
+
+    VAR_INPUT
+        theta : REAL;
+        theta_dot : REAL; 
+        x_dot : REAL; 
+    END_VAR
+
+    VAR_OUTPUT
+        F : REAL; 
+    END_VAR
+
+    FUZZIFY theta
+        TERM left_down :=  (310,0) (360,1);
+        TERM very_left :=  (190,0) (270,1) (320,0);
+        TERM a_little_left :=  (180,0) (190,1) (250,0);
+        TERM middle :=  (170,0) (180,1) (190,0);
+        TERM a_little_right :=  (100,0) (170,1) (180,0);
+        TERM very_right :=  (40,0) (90,1) (170,0);
+        TERM right_down :=  (0,1) (50,0);
+    END_FUZZIFY
+
+    FUZZIFY theta_dot
+        TERM fast_right := (-6,1) (-2,0);
+        TERM slow_right := (-3,0) (-1,1) (0,0);
+        TERM static := (-0.5,0) (0,1) (0.5,0);
+        TERM slow_left := (0,0) (1,1) (3,0);
+        TERM fast_left := (2,0) (6,1);
+    END_FUZZIFY
+
+    FUZZIFY x_dot
+        TERM fast_left := (-80,1) (-60,0);
+        TERM slow_left := (-60,0) (-40,1) (0,0);
+        TERM static := (-40,0) (0,1) (40,0);
+        TERM slow_right := (0,0) (40,1) (60,0);
+        TERM fast_right := (60,0) (80,1);
+    END_FUZZIFY
+
+
+    DEFUZZIFY F
+        TERM very_fast_left := (-80,0) (-50,1) (-30,0);
+        TERM fast_left := (-50,0) (-30,1) (-5,0);
+        TERM slow_left := (-30,0) (-10,1) (0,0);
+        TERM no_move := (-10,0) (0,1) (10,0);
+        TERM slow_right := (0,0) (10,1) (30,0);
+        TERM fast_right := (10,0) (30,1) (50,0);
+        TERM very_fast_right := (30,0) (50,1) (80,0);
+        ACCU : MAX;
+        METHOD : COG;
+        DEFAULT := 0;
+    END_DEFUZZIFY
+
+    RULEBLOCK Inverted_Pendulum
+        AND : MIN;
+        OR : MAX;
+
+  
+        RULE 1 : IF theta IS a_little_left AND theta_dot IS slow_left
+                 THEN F IS fast_left;
+
+        RULE 2 : IF theta IS middle AND theta_dot IS slow_left
+                 THEN F IS slow_left;
+
+        RULE 3 : IF theta IS a_little_right AND theta_dot IS slow_left
+                 THEN F IS no_move;
+
+        RULE 4 : IF theta IS a_little_left AND theta_dot IS static
+                 THEN F IS slow_left;
+
+        RULE 5 : IF theta IS middle AND theta_dot IS static
+                 THEN F IS no_move;
+
+        RULE 6 : IF theta IS a_little_right AND theta_dot IS static
+                 THEN F IS slow_right;
+
+        RULE 7 : IF theta IS a_little_left AND theta_dot IS slow_right
+                 THEN F IS no_move;
+
+        RULE 8 : IF theta IS middle AND theta_dot IS slow_right
+                 THEN F IS slow_right;
+
+        RULE 9 : IF theta IS a_little_right AND theta_dot IS slow_right
+                 THEN F IS fast_right;
+
+
+        RULE 10 : IF theta IS left_down AND theta_dot IS slow_left
+                 THEN F IS fast_left;
+
+        RULE 11 : IF theta IS left_down AND theta_dot IS fast_left
+                 THEN F IS fast_left;
+
+        RULE 12 : IF theta IS right_down AND theta_dot IS slow_right
+                 THEN F IS fast_right;
+
+        RULE 13 : IF theta IS right_down AND theta_dot IS fast_right
+                 THEN F IS fast_right;
+
+
+        RULE 14 : IF theta IS middle AND theta_dot IS fast_right
+                 THEN F IS fast_right;
+
+        RULE 15 : IF theta IS middle AND theta_dot IS fast_left
+                 THEN F IS fast_left;
+
+        (*
+        RULE 16 : x_dot IS fast_left OR x_dot IS slow_left
+                 THEN F IS slow_right;
+
+        RULE 17 : x_dot IS fast_right OR x_dot IS slow_right
+                 THEN F IS slow_left; *)
+
+
+        RULE 18 : IF theta IS very_left AND
+                    (theta_dot IS static OR
+                     theta_dot IS slow_right OR
+                      theta_dot IS slow_left)
+                 THEN F IS no_move;
+
+        RULE 19 : IF theta IS very_left AND theta_dot IS fast_right
+                 THEN F IS slow_right;
+
+        RULE 20 : IF theta IS very_left AND theta_dot IS fast_left
+                 THEN F IS slow_right;
+
+
+ 
+        RULE 21 : IF theta IS very_right AND
+                    (theta_dot IS static OR
+                     theta_dot IS slow_right OR
+                      theta_dot IS slow_left)
+                 THEN F IS no_move;
+
+        RULE 22 : IF theta IS very_right AND theta_dot IS fast_right
+                 THEN F IS slow_left;
+
+        RULE 23 : IF theta IS very_right AND theta_dot IS fast_left
+                 THEN F IS slow_left;
+
+
+    END_RULEBLOCK
+
+END_FUNCTION_BLOCK
